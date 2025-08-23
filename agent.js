@@ -1,13 +1,11 @@
 
 // import readline from 'node:readline/promises';
-import readline from 'node:readline';
+// import readline from 'node:readline';
 
+import promptSync from 'prompt-sync';
 import { Groq } from "groq-sdk";
 
 const expensesDB = [];
-
-console.log("Is TTY:", process.stdin.isTTY);
-
 
 const groq = new Groq({
     apiKey: process.env.GROQ_API_KEY,
@@ -15,10 +13,8 @@ const groq = new Groq({
 
 async function callAgent() {
 
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-    });
+    const prompt = promptSync();
+    
 
     const messages = [
         {
@@ -26,16 +22,12 @@ async function callAgent() {
             content: `You are Alina, a personal financial advisor.Your task is to assist user their expenses,balances and financial planning, current datetime: ${new Date().toUTCString()}`
         },
     ];
-    
-    function askQuestion(query) {
-        return new Promise(resolve => rl.question(query, resolve));
-      }
       
 
     //this is for user prompt loop
     while(true){
-        const userQuestion = await askQuestion("User: ");
-          if(userQuestion === "exit"){
+        const userQuestion = prompt("User: ");
+          if(userQuestion === "exit" || "bye"){
             break;
           }
           messages.push({
@@ -121,8 +113,6 @@ async function callAgent() {
             }
         }
     }
-
-rl.close();
 }
 callAgent()
 

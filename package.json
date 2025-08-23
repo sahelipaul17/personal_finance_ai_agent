@@ -12,6 +12,7 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "groq-sdk": "^0.30.0"
+    "groq-sdk": "^0.30.0",
+    "prompt-sync": "^4.2.0"
   }
 }
