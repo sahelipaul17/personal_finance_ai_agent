@@ -6,6 +6,7 @@ import promptSync from 'prompt-sync';
 import { Groq } from "groq-sdk";
 
 const expensesDB = [];
+const incomeDB = [];
 
 const groq = new Groq({
     apiKey: process.env.GROQ_API_KEY,
@@ -19,7 +20,13 @@ async function callAgent() {
     const messages = [
         {
             role: "system",
-            content: `You are Alina, a personal financial advisor.Your task is to assist user their expenses,balances and financial planning, current datetime: ${new Date().toUTCString()}`
+            content: `You are Alina, a personal financial advisor.Your task is to assist user their expenses,balances and financial planning, 
+            you have access to the following tools:
+            1. getTotalExpense({from, to}): string // Get total expense for a time period.
+            2. addExpense({name, amount}): string // Add new expense to the expense database.
+            3. addIncome({name, amount}): string // Add new income to income database.
+            4. getMoneyBalance(): string // Get remaining money balance from database.
+            current datetime: ${new Date().toUTCString()}`
         },
     ];
       
@@ -64,7 +71,7 @@ async function callAgent() {
                         type: "function",
                         function: {
                             name: "addExpenses",
-                            description: "Add expenses to the user",
+                            description: "Add expenses to the entry expenses database",
                             parameters: {
                                 type: "object",
                                 properties: {
@@ -79,7 +86,35 @@ async function callAgent() {
                                 },
                             },
                         }
-                    }]
+                    },
+                    {
+                        type: "function",
+                        function: {
+                            name: "addIncome",
+                            description: "Add income of the user to the entry income database",
+                            parameters: {
+                                type: "object",
+                                properties: {
+                                    name: {
+                                        type: "string",
+                                        description: "Name of the income , example : got salary",
+                                    },
+                                    amount: {
+                                        type: "string",
+                                        description: "Amount of the income, example : 1050000 INR",
+                                    },
+                                },
+                            },
+                        }
+                    },
+                    {
+                        type: "function",
+                        function: {
+                            name: "getMoneyBalance",
+                            description: "Get remaining money balance from database"
+                        }
+                    }
+                ]
                 })
             
             // console.log(JSON.stringify(completion.choices[0], null, 2));
@@ -103,6 +138,12 @@ async function callAgent() {
                 }
                 else if (functionName === "addExpenses") {
                     result = addExpenses(JSON.parse(functionArgs));
+                }
+                else if (functionName === "addIncome") {
+                    result = addIncome(JSON.parse(functionArgs));
+                }
+                else if (functionName === "getMoneyBalance") {
+                    result = getMoneyBalance();
                 }
                 messages.push({
                     role: "tool",
@@ -133,5 +174,17 @@ function addExpenses({name,amount}) {
     expensesDB.push({name, amount});
 
     return `Expense added to the database ${name} : ${parseInt(amount)}`;
+}
+
+function addIncome({ name, amount }) {
+    incomeDB.push({ name, amount });
+    return 'Added to the income database.';
+}
+
+function getMoneyBalance() {
+    const totalIncome = incomeDB.reduce((acc, item) => acc + item.amount, 0);
+    const totalExpense = expensesDB.reduce((acc, item) => acc + item.amount, 0);
+
+    return `${totalIncome - totalExpense} INR`;
 }
 
